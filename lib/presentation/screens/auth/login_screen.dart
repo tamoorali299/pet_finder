@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:pet_finder/presentation/screens/main/main_app_screen.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../main/main_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -124,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (authProvider.user != null) {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const MainScreen()),
+                            MaterialPageRoute(builder: (context) => const MainAppScreen()),
                           );
                         }
                       }

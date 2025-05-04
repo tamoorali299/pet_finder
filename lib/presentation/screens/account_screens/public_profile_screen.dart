@@ -41,10 +41,6 @@ class PublicProfileScreen extends StatelessWidget {
               style: const TextStyle(color: Colors.grey, fontSize: 16),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Pet Categories: ${user?.petCategory ?? 'None'}',
-              style: const TextStyle(color: Colors.white, fontSize: 16),
-            ),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {

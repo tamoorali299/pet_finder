@@ -1,10 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:pet_finder/domain/entities/user.dart';
 
 abstract class AuthRepository {
   Future<User> login(String email, String password);
-  Future<User> signUp(String email, String password, {String? name, String? petCategory});
+  Future<User> signUp(String email, String password, {String? name});
   Future<void> forgetPassword(String email);
   Future<String?> getToken();
   Future<void> logout();
@@ -21,38 +20,20 @@ class UserModel {
   final String? id;
   final String? email;
   final String? name;
-  final String? petCategory;
-  final Timestamp? createdAt;
 
-  UserModel({this.id, this.email, this.name, this.petCategory, this.createdAt});
-
-  factory UserModel.fromFirebaseUser(firebase_auth.User user, {String? name, String? petCategory}) {
-    return UserModel(
-      id: user.uid,
-      email: user.email,
-      name: name ?? user.displayName,
-      petCategory: petCategory,
-    );
-  }
+  UserModel({
+    this.id,
+    this.email,
+    this.name,
+  });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return UserModel(
       id: doc.id,
-      email: data['email'],
-      name: data['name'],
-      petCategory: data['petCategory'],
-      createdAt: data['createdAt'],
+      email: data['email'] as String?,
+      name: data['name'] as String?,
     );
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'email': email,
-      'name': name,
-      'petCategory': petCategory,
-      'createdAt': FieldValue.serverTimestamp(),
-    };
   }
 }
 
@@ -62,19 +43,52 @@ class AdModel {
   final String? category;
   final double? price;
   final String? ownerId;
-  final dynamic createdAt;
+  final Timestamp? createdAt;
 
-  AdModel({this.id, this.title, this.category, this.price, this.ownerId, this.createdAt});
+  AdModel({
+    this.id,
+    this.title,
+    this.category,
+    this.price,
+    this.ownerId,
+    this.createdAt,
+  });
 
   factory AdModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    print('Raw Firestore data for doc ${doc.id}: $data'); // Debug log
+
+    // Safely parse the price field
+    double? price;
+    final rawPrice = data['price'];
+    if (rawPrice is num) {
+      price = rawPrice.toDouble();
+    } else if (rawPrice is String) {
+      price = double.tryParse(rawPrice);
+    }
+
+    // Safely parse the createdAt field
+    Timestamp? createdAt;
+    final rawCreatedAt = data['createdAt'];
+    if (rawCreatedAt is Timestamp) {
+      createdAt = rawCreatedAt;
+    } else if (rawCreatedAt is String) {
+      try {
+        final dateTime = DateTime.parse(rawCreatedAt);
+        createdAt = Timestamp.fromDate(dateTime);
+      } catch (e) {
+        print('Error parsing createdAt string: $e');
+        createdAt = null; // Or set a default value
+      }
+    }
+
     return AdModel(
       id: doc.id,
-      title: data['title'],
-      category: data['category'],
-      price: (data['price'] as num?)?.toDouble(),
-      ownerId: data['ownerId'],
-      createdAt: data['createdAt'],
+      title: data['title'] as String?,
+      category: data['category'] as String?,
+      price: price,
+      ownerId: data['ownerId'] as String?,
+      createdAt: createdAt,
     );
   }
 

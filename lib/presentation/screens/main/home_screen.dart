@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:pet_finder/domain/repositories/auth_repository.dart' show AdModel;
+import 'package:pet_finder/presentation/providers/auth_provider.dart';
+import 'package:pet_finder/presentation/screens/category/all_categories_screen.dart';
+import 'package:pet_finder/presentation/screens/category/category_detail_screen.dart';
+import 'package:pet_finder/presentation/screens/main/main_screen.dart';
+import 'package:pet_finder/presentation/screens/notification_screen/notification_screen.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/pet_card.dart';
-import '../notification_screen/notification_screen.dart';
-import '../category/category_detail_screen.dart';
-import '../all_pets/all_pets_screen.dart';
-import '../category/all_categories_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final user = authProvider.user;
+
+    if (user == null) {
+      return const Center(child: Text('Please log in', style: TextStyle(color: Colors.white)));
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A), // Dark background like in the screenshot
+        backgroundColor: const Color(0xFF1A1A1A),
         title: const Text(
           'Pet Finder',
           style: TextStyle(
@@ -22,7 +33,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
         actions: [
-          // Notification Icon
           IconButton(
             icon: const Icon(Icons.notifications, color: Colors.white),
             onPressed: () {
@@ -37,7 +47,6 @@ class HomeScreen extends StatelessWidget {
           preferredSize: const Size.fromHeight(100.0),
           child: Column(
             children: [
-              // Location Dropdown
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Row(
@@ -60,7 +69,6 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              // Search Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: TextField(
@@ -69,7 +77,7 @@ class HomeScreen extends StatelessWidget {
                     hintStyle: const TextStyle(color: Colors.grey),
                     prefixIcon: const Icon(Icons.search, color: Colors.white),
                     filled: true,
-                    fillColor: const Color(0xFF2A2A2A), // Slightly lighter than AppBar
+                    fillColor: const Color(0xFF2A2A2A),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide.none,
@@ -87,14 +95,23 @@ class HomeScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 20),
-            // Banner (Placeholder)
             Container(
               height: 150,
               width: 450,
               color: Colors.purple[300],
-              child: Image.asset('assets/images/ads.jpg',fit: BoxFit.fill,)
+              child: Image.asset(
+                'assets/images/ads.jpg',
+                fit: BoxFit.fill,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Text(
+                      'Ad Banner',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  );
+                },
+              ),
             ),
-            // Categories Section (Placeholder)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -116,7 +133,6 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Categories Row (Placeholder)
             SizedBox(
               height: 100,
               child: ListView(
@@ -135,7 +151,6 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Pet Listings Section
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -149,7 +164,7 @@ class HomeScreen extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AllPetsScreen()),
+                        MaterialPageRoute(builder: (context) => const MainScreen()),
                       );
                     },
                     child: const Text('See all', style: TextStyle(color: Colors.blue)),
@@ -157,36 +172,64 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
-            // Pet Cards
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                children: const [
-                  PetCard(
-                    imageUrl: 'https://via.placeholder.com/150', // Placeholder image
-                    title: 'Persian Cat',
-                    price: 'Rs 25,000',
-                    location: 'DHA Phase 5, Lahore',
-                    timeAgo: '7 hours ago',
+            StreamBuilder<List<AdModel>>(
+              stream: authProvider.getAds(""),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  print('StreamBuilder error: ${snapshot.error}');
+                  return const Center(child: Text('Error loading ads', style: TextStyle(color: Colors.white)));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No ads found', style: TextStyle(color: Colors.white)));
+                }
+
+                final ads = snapshot.data!;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    children: ads.map((ad) {
+                      final timeAgo = ad.createdAt != null
+                          ? _timeAgo(ad.createdAt!.toDate())
+                          : 'Unknown time';
+                      return PetCard(
+                        imageUrl: 'https://via.placeholder.com/150',
+                        title: ad.title ?? 'Untitled',
+                        price: 'Rs ${ad.price?.toStringAsFixed(0) ?? '0'}',
+                        location: 'Unknown Location',
+                        timeAgo: timeAgo,
+                      );
+                    }).toList(),
                   ),
-                  PetCard(
-                    imageUrl: 'https://via.placeholder.com/150', // Placeholder image
-                    title: 'German Shepherd',
-                    price: 'Rs 50,000',
-                    location: 'Gulberg, Lahore',
-                    timeAgo: '2 days ago',
-                  ),
-                ],
-              ),
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
+
+  String _timeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} days ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hours ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minutes ago';
+    } else {
+      return 'Just now';
+    }
+  }
 }
 
-// Category Icon Widget for Categories Row
 class _CategoryIcon extends StatelessWidget {
   final IconData icon;
   final String label;
