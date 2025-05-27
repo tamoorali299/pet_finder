@@ -51,9 +51,25 @@ class _CreateAdScreenState extends State<CreateAdScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(
-        title: const Text('Create Ad'),
+        title: const Text(
+          'Create Ad',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Inter',
+            color: Colors.white,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: false,
+        titleSpacing: 0.0, // Ensures minimal padding for left alignment
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pop(context); // Navigate back to previous screen
+          },
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

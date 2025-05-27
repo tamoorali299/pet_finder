@@ -25,7 +25,12 @@ class MyAdsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(
-        title: const Text('My Ads', style: TextStyle(color: Colors.white),),
+        title: Text('My Ads', style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Inter',
+            color: Colors.white
+        ),),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
